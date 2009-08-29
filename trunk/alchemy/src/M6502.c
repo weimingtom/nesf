@@ -85,11 +85,11 @@ boolean halted;
 	P |= i & 0xc0;\
 	P |= (A & i) != 0 ? 0 : 0x2;
 
-
 void emulateCPUCycles(float cycles) {
 	// Declare Deficit Cycles
 	cyclesPending += cycles;
 	// Loop until a Horizontal Blank is encountered
+	int i,j,k;
 	while (cyclesPending > 0) {
 		// Fetch and Execute the Next Instruction
 		if (!halted) {
@@ -99,7 +99,6 @@ void emulateCPUCycles(float cycles) {
 			// Declare Variables for Handling Addresses and Values
 			int address;
 			int writeVal;
-			int i,j,k;
 			// Check if an Instruction Code can be Identified
 			switch (instCode) {
 			case 0x00: // BRK
@@ -672,6 +671,7 @@ void emulateCPUCycles(float cycles) {
 				address = byZeroPageX();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
+				writeVal = readByte(address);
 				increment(writeVal);
 				writeByte(address, writeVal);
 				break;
@@ -680,6 +680,7 @@ void emulateCPUCycles(float cycles) {
 				address = byAbsolute();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
+				writeVal = readByte(address);
 				increment(writeVal);
 				writeByte(address, writeVal);
 				break;
@@ -688,6 +689,7 @@ void emulateCPUCycles(float cycles) {
 				address = byAbsoluteX();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
+				writeVal = readByte(address);
 				increment(writeVal);
 				writeByte(address, writeVal);
 				break;
@@ -708,6 +710,7 @@ void emulateCPUCycles(float cycles) {
 				address = byZeroPage();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
+				writeVal = readByte(address);
 				decrement(writeVal);
 				writeByte(address, writeVal);
 				break;
@@ -716,6 +719,7 @@ void emulateCPUCycles(float cycles) {
 				address = byZeroPageX();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
+				writeVal = readByte(address);
 				decrement(writeVal);
 				writeByte(address, writeVal);
 				break;
@@ -724,6 +728,7 @@ void emulateCPUCycles(float cycles) {
 				address = byAbsolute();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
+				writeVal = readByte(address);
 				decrement(writeVal);
 				writeByte(address, writeVal);
 				break;
@@ -732,6 +737,7 @@ void emulateCPUCycles(float cycles) {
 				address = byAbsoluteX();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
+				writeVal = readByte(address);
 				decrement(writeVal);
 				writeByte(address, writeVal);
 				break;
@@ -748,9 +754,11 @@ void emulateCPUCycles(float cycles) {
 				setStatusFlags(Y);
 				break;
 			case 0x69: // ADC #aa
+
 				operateAdd(byImmediate());
 				break;
 			case 0x65: // ADC $aa
+
 				operateAdd(readByte(byZeroPage()));
 				break;
 			case 0x75: // ADC $aa,X
@@ -1181,7 +1189,6 @@ void setStatusFlags(int value) {
 	P &= 0x7D;
 	P |= znTable[value];
 }
-
 
 /**
  *

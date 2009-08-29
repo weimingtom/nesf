@@ -17,164 +17,10 @@ float CYCLES_PER_LINE = 116.0f;
 
 boolean halted;
 
-#define setStatusFlags(value)\
-	P &= 0x7D;\
-	P |= znTable[value];\
-
-
-#define byImmediate()\
-	readByte(PC++)
-
-int byAbsolute() {
-	int address = readWord(PC);
-	PC += 2;
-	return address;
-}
-
-#define byAbsoluteY()\
-	byAbsolute() + Y
-
-#define byAbsoluteX()\
-	byAbsolute() + X
-
-#define byZeroPage()\
-	byImmediate()
-
-#define byZeroPageX()\
-	(byZeroPage() + X) & 0xff
-
-#define byZeroPageY()\
-	(byZeroPage() + Y) & 0xff
-
-#define byIndirectX()\
-	readWord(byZeroPageX())
-
-#define byIndirectY()\
-	readWord(byZeroPageY())
-//	int address = readByte(PC++);
-//	address = readWord(address);
-//	checkPageBoundaryCrossing(address, address + Y);
-//	return address + Y;
-
-
-#define ASL(i)\
-	P &= 0x7C;\
-	P |= i >> 7;\
-	i <<= 1;\
-	i &= 0xFF;\
-	P |= znTable[i];
-
-#define LSR(i)\
-	P &= 0x7C;\
-	P |= i & 0x1;\
-	i >>= 1;\
-	P |= znTable[i];
-
-#define ROL(i)\
-	i <<= 1;\
-	i |= P & 0x1;\
-	P &= 0x7C;\
-	P |= i >> 8;\
-	i &= 0xFF;\
-	P |= znTable[i];
-
-#define ROR(i)\
-	j = P & 0x1;\
-	P &= 0x7C;\
-	P |= i & 0x1;\
-	i >>= 1;\
-	i |= j << 7;\
-	P |= znTable[i];
-
-#define increment(i)\
-	i++;\
-	i &= 0xff;\
-	setStatusFlags(i);\
-
-#define decrement(i)\
-	i--;\
-	i &= 0xff;\
-	setStatusFlags(i);
-
-/*
-#define operateAdd(i)\
-	k = P & 0x1;\
-	j = A + i + k;\
-	P &= 0x3C;\
-	P |= (~(A ^ i) & (A ^ i) & 0x80) == 0 ? 0 : 0x40;\
-	P |= j <= 255 ? 0 : 0x1;\
-	A = j & 0xFF;\
-	P |= znTable[A];
-//*/
-void operateAdd(int i) {
-	int k = P & 0x1;
-	int j = A + i + k;
-	P &= 0x3C;
-	P |= (~(A ^ i) & (A ^ i) & 0x80) == 0 ? 0 : 0x40;
-	P |= j <= 255 ? 0 : 0x1;
-	A = j & 0xFF;
-	P |= znTable[A];
-}
-//*/
-/*
-#define operateSub(i)\
-	k = ~P & 0x1;\
-	j = A - i - k;\
-	P &= 0x3C;\
-	P |= (~(A ^ i) & (A ^ i) & 0x80) == 0 ? 0 : 0x40;\
-	P |= j < 0 ? 0 : 0x1;\
-	A = j & 0xFF;\
-	P |= znTable[A];
-
-#define operateCmp(i, j)\
-	k = i - j;\
-	P &= 0x7C;\
-	P |= k < 0 ? 0 : 0x1;\
-	P |= znTable[k & 0xff];
-
-#define operateBit(i)\
-	P &= 0x3D;\
-	P |= i & 0xc0;\
-	P |= (A & i) != 0 ? 0 : 0x2;
-
-*/
-
-void operateSub(int i) {
-	// Store Carry
-	int k = ~P & 0x1;
-	// Store Subtract Result
-	int j = A - i - k;
-	// Turn Off CZN
-	P &= 0x3C;
-	// Set Overflow (V)
-	P |= (~(A ^ i) & (A ^ i) & 0x80) == 0 ? 0 : 0x40;
-	// Set Carry
-	P |= j < 0 ? 0 : 0x1;
-	// Set A
-	A = j & 0xFF;
-	// Set ZN in P
-	P |= znTable[A];
-}
-
-void operateCmp(int i, int j) {
-	int k = i - j;
-	P &= 0x7C;
-	P |= k < 0 ? 0 : 0x1;
-	P |= znTable[k & 0xff];
-}
-
-void operateBit(int i) {
-	P &= 0x3D;
-	P |= i & 0xc0;
-	P |= (A & i) != 0 ? 0 : 0x2;
-}
-
-
 void emulateCPUCycles(float cycles) {
 	// Declare Deficit Cycles
 	cyclesPending += cycles;
 	// Loop until a Horizontal Blank is encountered
-	int i,j,k;
 	while (cyclesPending > 0) {
 		// Fetch and Execute the Next Instruction
 		if (!halted) {
@@ -528,14 +374,14 @@ void emulateCPUCycles(float cycles) {
 				break;
 			case 0x0A: // ASL A
 
-				ASL(A);
+				A = ASL(A);
 				break;
 			case 0x06: // ASL $aa
 
 				address = byZeroPage();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				ASL(writeVal);
+				writeVal = ASL(writeVal);
 				writeByte(address, writeVal);
 				break;
 			case 0x16: // ASL $aa,X
@@ -543,7 +389,7 @@ void emulateCPUCycles(float cycles) {
 				address = byZeroPageX();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				ASL(writeVal);
+				writeVal = ASL(writeVal);
 				writeByte(address, writeVal);
 				break;
 			case 0x0E: // ASL $aaaa
@@ -551,7 +397,7 @@ void emulateCPUCycles(float cycles) {
 				address = byAbsolute();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				ASL(writeVal);
+				writeVal = ASL(writeVal);
 				writeByte(address, writeVal);
 				break;
 			case 0x1E: // ASL $aaaa,X
@@ -559,19 +405,19 @@ void emulateCPUCycles(float cycles) {
 				address = byAbsoluteX();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				ASL(writeVal);
+				writeVal = ASL(writeVal);
 				writeByte(address, writeVal);
 				break;
 			case 0x4A: // LSR A
 
-				LSR(A);
+				A = LSR(A);
 				break;
 			case 0x46: // LSR $aa
 
 				address = byZeroPage();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				LSR(writeVal);
+				writeVal = LSR(writeVal);
 				writeByte(address, writeVal);
 				break;
 			case 0x56: // LSR $aa,X
@@ -579,7 +425,7 @@ void emulateCPUCycles(float cycles) {
 				address = byZeroPageX();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				LSR(writeVal);
+				writeVal = LSR(writeVal);
 				writeByte(address, writeVal);
 				break;
 			case 0x4E: // LSR $aaaa
@@ -587,7 +433,7 @@ void emulateCPUCycles(float cycles) {
 				address = byAbsolute();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				LSR(writeVal);
+				writeVal = LSR(writeVal);
 				writeByte(address, writeVal);
 				break;
 			case 0x5E: // LSR $aaaa,X
@@ -595,19 +441,19 @@ void emulateCPUCycles(float cycles) {
 				address = byAbsoluteX();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				LSR(writeVal);
+				writeVal = LSR(writeVal);
 				writeByte(address, writeVal);
 				break;
 			case 0x2A: // ROL A
 
-				ROL(A);
+				A = ROL(A);
 				break;
 			case 0x26: // ROL $aa (RWMW)
 
 				address = byZeroPage();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				ROL(writeVal);
+				writeVal = ROL(writeVal);
 				writeByte(address, writeVal);
 				break;
 			case 0x36: // ROL $aa,X (RWMW)
@@ -615,7 +461,7 @@ void emulateCPUCycles(float cycles) {
 				address = byZeroPageX();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				ROL(writeVal);
+				writeVal = ROL(writeVal);
 				writeByte(address, writeVal);
 				break;
 			case 0x2E: // ROL $aaaa (RWMW)
@@ -623,7 +469,7 @@ void emulateCPUCycles(float cycles) {
 				address = byAbsolute();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				ROL(writeVal);
+				writeVal = ROL(writeVal);
 				writeByte(address, writeVal);
 				break;
 			case 0x3E: // ROL $aaaa,X (RWMW)
@@ -631,19 +477,19 @@ void emulateCPUCycles(float cycles) {
 				address = byAbsoluteX();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				ROL(writeVal);
+				writeVal = ROL(writeVal);
 				writeByte(address, writeVal);
 				break;
 			case 0x6A: // ROR A
 
-				ROR(A);
+				A = ROR(A);
 				break;
 			case 0x66: // ROR $aa
 
 				address = byZeroPage();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				ROR(writeVal);
+				writeVal = ROR(writeVal);
 				writeByte(address, writeVal);
 				break;
 			case 0x76: // ROR $aa,X
@@ -651,7 +497,7 @@ void emulateCPUCycles(float cycles) {
 				address = byZeroPageX();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				ROR(writeVal);
+				writeVal = ROR(writeVal);
 				writeByte(address, writeVal);
 				break;
 			case 0x6E: // ROR $aaaa
@@ -659,7 +505,7 @@ void emulateCPUCycles(float cycles) {
 				address = byAbsolute();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				ROR(writeVal);
+				writeVal = ROR(writeVal);
 				writeByte(address, writeVal);
 				break;
 			case 0x7E: // ROR $aaaa,X
@@ -667,7 +513,7 @@ void emulateCPUCycles(float cycles) {
 				address = byAbsoluteX();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				ROR(writeVal);
+				writeVal = ROR(writeVal);
 				writeByte(address, writeVal);
 				break;
 
@@ -748,7 +594,7 @@ void emulateCPUCycles(float cycles) {
 				address = byZeroPage();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				increment(writeVal);
+				writeVal = increment(writeVal);
 				writeByte(address, writeVal);
 				break;
 			case 0xF6: // INC $aa,X (RWMW)
@@ -756,8 +602,7 @@ void emulateCPUCycles(float cycles) {
 				address = byZeroPageX();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				writeVal = readByte(address);
-				increment(writeVal);
+				writeVal = increment(readByte(address));
 				writeByte(address, writeVal);
 				break;
 			case 0xEE: // INC $aaaa (RWMW)
@@ -765,8 +610,7 @@ void emulateCPUCycles(float cycles) {
 				address = byAbsolute();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				writeVal = readByte(address);
-				increment(writeVal);
+				writeVal = increment(readByte(address));
 				writeByte(address, writeVal);
 				break;
 			case 0xFE: // INC $aaaa,X (RWMW)
@@ -774,8 +618,7 @@ void emulateCPUCycles(float cycles) {
 				address = byAbsoluteX();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				writeVal = readByte(address);
-				increment(writeVal);
+				writeVal = increment(readByte(address));
 				writeByte(address, writeVal);
 				break;
 			case 0xE8: // INX
@@ -795,8 +638,7 @@ void emulateCPUCycles(float cycles) {
 				address = byZeroPage();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				writeVal = readByte(address);
-				decrement(writeVal);
+				writeVal = decrement(readByte(address));
 				writeByte(address, writeVal);
 				break;
 			case 0xD6: // DEC $aa,X (RWMW)
@@ -804,8 +646,7 @@ void emulateCPUCycles(float cycles) {
 				address = byZeroPageX();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				writeVal = readByte(address);
-				decrement(writeVal);
+				writeVal = decrement(readByte(address));
 				writeByte(address, writeVal);
 				break;
 			case 0xCE: // DEC $aaaa (RWMW)
@@ -813,8 +654,7 @@ void emulateCPUCycles(float cycles) {
 				address = byAbsolute();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				writeVal = readByte(address);
-				decrement(writeVal);
+				writeVal = decrement(readByte(address));
 				writeByte(address, writeVal);
 				break;
 			case 0xDE: // DEC $aaaa,X (RWMW)
@@ -822,8 +662,7 @@ void emulateCPUCycles(float cycles) {
 				address = byAbsoluteX();
 				writeVal = readByte(address);
 				writeByte(address, writeVal);
-				writeVal = readByte(address);
-				decrement(writeVal);
+				writeVal = decrement(readByte(address));
 				writeByte(address, writeVal);
 				break;
 			case 0xCA: // DEX
@@ -1082,6 +921,164 @@ void initResetCPU() {
 
 // //////////////////////////////////////////////////////////////////////////////
 //
+// Addressing Mode Functions
+//
+// //////////////////////////////////////////////////////////////////////////////
+/**
+ *
+ * <P>
+ * Get value by Immediate Mode Addressing - #$00
+ * </P>
+ *
+ * @return The value by the specified addressing mode in relation to the
+ *         current PC.
+ *
+ */
+int byImmediate() {
+	int i = readByte(PC++);
+
+	return i;
+}
+
+/**
+ *
+ * <P>
+ * Get value by Absolute Mode Addressing - $aaaa
+ * </P>
+ *
+ * @return The value by the specified addressing mode in relation to the
+ *         current PC.
+ *
+ */
+int byAbsolute() {
+	int address = readWord(PC);
+
+	PC += 2;
+	return address;
+}
+
+/**
+ *
+ * <P>
+ * Get value by Absolute Y Mode Addressing - $aaaa,Y
+ * </P>
+ *
+ * @return The value by the specified addressing mode in relation to the
+ *         current PC.
+ *
+ */
+int byAbsoluteY() {
+	int i = byAbsolute();
+
+	int j = i + Y;
+	checkPageBoundaryCrossing(i, j);
+	return j;
+}
+
+/**
+ *
+ * <P>
+ * Get value by Absolute X Mode Addressing - $aaaa,X
+ * </P>
+ *
+ * @return The value by the specified addressing mode in relation to the
+ *         current PC.
+ *
+ */
+int byAbsoluteX() {
+	int i = byAbsolute();
+
+	int j = i + X;
+	checkPageBoundaryCrossing(i, j);
+	return j;
+}
+
+/**
+ *
+ * <P>
+ * Get value by Zero Page Mode Addressing - $aa
+ * </P>
+ *
+ * @return The value by the specified addressing mode in relation to the
+ *         current PC.
+ *
+ */
+int byZeroPage() {
+	int address = readByte(PC++);
+
+	return address;
+}
+
+/**
+ *
+ * <P>
+ * Get value by Zero Page X Mode Addressing - $aa,X
+ * </P>
+ *
+ * @return The value by the specified addressing mode in relation to the
+ *         current PC.
+ *
+ */
+int byZeroPageX() {
+	int address = readByte(PC++);
+
+	return (address + X) & 0xff;
+}
+
+/**
+ *
+ * <P>
+ * Get value by Zero Page Y Mode Addressing - $aa,Y
+ * </P>
+ *
+ * @return The value by the specified addressing mode in relation to the
+ *         current PC.
+ *
+ */
+int byZeroPageY() {
+	int address = readByte(PC++);
+
+	return (address + Y) & 0xff;
+}
+
+/**
+ *
+ * <P>
+ * Get value by Indirect X Mode Addressing - ($aa,X)
+ * </P>
+ *
+ * @return The value by the specified addressing mode in relation to the
+ *         current PC.
+ *
+ */
+int byIndirectX() {
+	int address = readByte(PC++);
+
+	address += X;
+	address &= 0xFF;
+	return readWord(address);
+}
+
+/**
+ *
+ * <P>
+ * Get value by Indirect Y Mode Addressing - ($aa),Y
+ * </P>
+ *
+ * @return The value by the specified addressing mode in relation to the
+ *         current PC.
+ *
+ */
+int byIndirectY() {
+	int address = readByte(PC++);
+
+	address = readWord(address);
+	checkPageBoundaryCrossing(address, address + Y);
+	return address + Y;
+}
+
+// //////////////////////////////////////////////////////////////////////////////
+//
 // Utility Functions
 //
 // //////////////////////////////////////////////////////////////////////////////
@@ -1100,6 +1097,222 @@ void initResetCPU() {
 void checkPageBoundaryCrossing(int address1, int address2) {
 	if (((address2 ^ address1) & 0x100) != 0)
 		cyclesPending--;
+}
+
+/**
+ *
+ * <P>
+ * Set the Zero and Negative Status Flags.
+ * </P>
+ *
+ * @param value
+ *            The value used to determine the Status Flags.
+ *
+ */
+void setStatusFlags(int value) {
+	P &= 0x7D;
+	P |= znTable[value];
+}
+
+/**
+ *
+ * <P>
+ * Perform Arithmetic Shift Left.
+ * </P>
+ *
+ * @param i
+ *            The value used by the function.
+ *
+ */
+
+int ASL(int i) {
+	P &= 0x7C;
+	P |= i >> 7;
+	i <<= 1;
+	i &= 0xFF;
+	P |= znTable[i];
+	return i;
+}
+
+/**
+ *
+ * <P>
+ * Perform Logical Shift Right.
+ * </P>
+ *
+ * @param i
+ *            The value used by the function.
+ *
+ */
+int LSR(int i) {
+	P &= 0x7C;
+	P |= i & 0x1;
+	i >>= 1;
+	P |= znTable[i];
+	return i;
+}
+
+/**
+ *
+ * <P>
+ * Perform Rotate Left.
+ * </P>
+ *
+ * @param i
+ *            The value used by the function.
+ *
+ */
+int ROL(int i) {
+	i <<= 1;
+	i |= P & 0x1;
+	P &= 0x7C;
+	P |= i >> 8;
+	i &= 0xFF;
+	P |= znTable[i];
+	return i;
+}
+
+/**
+ *
+ * <P>
+ * Perform Rotate Right.
+ * </P>
+ *
+ * @param i
+ *            The value used by the function.
+ *
+ */
+int ROR(int i) {
+	int j = P & 0x1;
+	P &= 0x7C;
+	P |= i & 0x1;
+	i >>= 1;
+	i |= j << 7;
+	P |= znTable[i];
+	return i;
+}
+
+/**
+ *
+ * <P>
+ * Perform Incrementation.
+ * </P>
+ *
+ * @param i
+ *            The value used by the function.
+ *
+ */
+int increment(int i) {
+	i++;
+	i &= 0xff;
+	setStatusFlags(i);
+	return i;
+}
+
+/**
+ *
+ * <P>
+ * Perform Decrementation.
+ * </P>
+ *
+ * @param i
+ *            The value used by the function.
+ *
+ */
+int decrement(int i) {
+	i--;
+	i &= 0xff;
+	setStatusFlags(i);
+	return i;
+}
+
+/**
+ *
+ * <P>
+ * Perform Add with Carry (no decimal mode on NES).
+ * </P>
+ *
+ * @param i
+ *            The value used by the function.
+ *
+ */
+void operateAdd(int i) {
+	// Store Carry
+	int k = P & 0x1;
+	// Store Add Result
+	int j = A + i + k;
+	// Turn Off CZN
+	P &= 0x3C;
+	// Set Overflow (V)
+	P |= (~(A ^ i) & (A ^ i) & 0x80) == 0 ? 0 : 0x40;
+	// Set Carry (C)
+	P |= j <= 255 ? 0 : 0x1;
+	// Set A
+	A = j & 0xFF;
+	// Set ZN
+	P |= znTable[A];
+}
+
+/**
+ *
+ * <P>
+ * Perform Subtract with Carry (no decimal mode on NES).
+ * </P>
+ *
+ * @param i
+ *            The value used by the function.
+ *
+ */
+void operateSub(int i) {
+	// Store Carry
+	int k = ~P & 0x1;
+	// Store Subtract Result
+	int j = A - i - k;
+	// Turn Off CZN
+	P &= 0x3C;
+	// Set Overflow (V)
+	P |= (~(A ^ i) & (A ^ i) & 0x80) == 0 ? 0 : 0x40;
+	// Set Carry
+	P |= j < 0 ? 0 : 0x1;
+	// Set A
+	A = j & 0xFF;
+	// Set ZN in P
+	P |= znTable[A];
+}
+
+/**
+ *
+ * <P>
+ * Perform Compare Function.
+ * </P>
+ *
+ * @param i
+ *            The first value.
+ * @param j
+ *            The second value.
+ *
+ */
+void operateCmp(int i, int j) {
+	int k = i - j;
+	P &= 0x7C;
+	P |= k < 0 ? 0 : 0x1;
+	P |= znTable[k & 0xff];
+}
+
+/**
+ *
+ * <P>
+ * Perform Bit Function.
+ * </P>
+ *
+ * @param i
+ *            The value used by the function.
+ *
+ */
+void operateBit(int i) {
+	P &= 0x3D;
+	P |= i & 0xc0;
+	P |= (A & i) != 0 ? 0 : 0x2;
 }
 
 /**

@@ -17,6 +17,46 @@ float CYCLES_PER_LINE = 116.0f;
 
 boolean halted;
 
+#define setStatusFlags(value)\
+	P &= 0x7D;\
+	P |= znTable[value];\
+
+
+#define byImmediate()\
+	readByte(PC++)
+
+int byAbsolute() {
+	int address = readWord(PC);
+	PC += 2;
+	return address;
+}
+
+#define byAbsoluteY()\
+	byAbsolute() + Y
+
+#define byAbsoluteX()\
+	byAbsolute() + X
+
+#define byZeroPage()\
+	byImmediate()
+
+#define byZeroPageX()\
+	(byZeroPage() + X) & 0xff
+
+#define byZeroPageY()\
+	(byZeroPage() + Y) & 0xff
+
+#define byIndirectX()\
+	readWord(byZeroPageX())
+
+#define byIndirectY()\
+	readWord(byZeroPageY())
+//	int address = readByte(PC++);
+//	address = readWord(address);
+//	checkPageBoundaryCrossing(address, address + Y);
+//	return address + Y;
+
+
 #define ASL(i)\
 	P &= 0x7C;\
 	P |= i >> 7;\
@@ -56,6 +96,7 @@ boolean halted;
 	i &= 0xff;\
 	setStatusFlags(i);
 
+/*
 #define operateAdd(i)\
 	k = P & 0x1;\
 	j = A + i + k;\
@@ -64,7 +105,18 @@ boolean halted;
 	P |= j <= 255 ? 0 : 0x1;\
 	A = j & 0xFF;\
 	P |= znTable[A];
-
+//*/
+void operateAdd(int i) {
+	int k = P & 0x1;
+	int j = A + i + k;
+	P &= 0x3C;
+	P |= (~(A ^ i) & (A ^ i) & 0x80) == 0 ? 0 : 0x40;
+	P |= j <= 255 ? 0 : 0x1;
+	A = j & 0xFF;
+	P |= znTable[A];
+}
+//*/
+/*
 #define operateSub(i)\
 	k = ~P & 0x1;\
 	j = A - i - k;\
@@ -84,6 +136,39 @@ boolean halted;
 	P &= 0x3D;\
 	P |= i & 0xc0;\
 	P |= (A & i) != 0 ? 0 : 0x2;
+
+*/
+
+void operateSub(int i) {
+	// Store Carry
+	int k = ~P & 0x1;
+	// Store Subtract Result
+	int j = A - i - k;
+	// Turn Off CZN
+	P &= 0x3C;
+	// Set Overflow (V)
+	P |= (~(A ^ i) & (A ^ i) & 0x80) == 0 ? 0 : 0x40;
+	// Set Carry
+	P |= j < 0 ? 0 : 0x1;
+	// Set A
+	A = j & 0xFF;
+	// Set ZN in P
+	P |= znTable[A];
+}
+
+void operateCmp(int i, int j) {
+	int k = i - j;
+	P &= 0x7C;
+	P |= k < 0 ? 0 : 0x1;
+	P |= znTable[k & 0xff];
+}
+
+void operateBit(int i) {
+	P &= 0x3D;
+	P |= i & 0xc0;
+	P |= (A & i) != 0 ? 0 : 0x2;
+}
+
 
 void emulateCPUCycles(float cycles) {
 	// Declare Deficit Cycles
@@ -997,164 +1082,6 @@ void initResetCPU() {
 
 // //////////////////////////////////////////////////////////////////////////////
 //
-// Addressing Mode Functions
-//
-// //////////////////////////////////////////////////////////////////////////////
-/**
- *
- * <P>
- * Get value by Immediate Mode Addressing - #$00
- * </P>
- *
- * @return The value by the specified addressing mode in relation to the
- *         current PC.
- *
- */
-int byImmediate() {
-	int i = readByte(PC++);
-
-	return i;
-}
-
-/**
- *
- * <P>
- * Get value by Absolute Mode Addressing - $aaaa
- * </P>
- *
- * @return The value by the specified addressing mode in relation to the
- *         current PC.
- *
- */
-int byAbsolute() {
-	int address = readWord(PC);
-
-	PC += 2;
-	return address;
-}
-
-/**
- *
- * <P>
- * Get value by Absolute Y Mode Addressing - $aaaa,Y
- * </P>
- *
- * @return The value by the specified addressing mode in relation to the
- *         current PC.
- *
- */
-int byAbsoluteY() {
-	int i = byAbsolute();
-
-	int j = i + Y;
-	checkPageBoundaryCrossing(i, j);
-	return j;
-}
-
-/**
- *
- * <P>
- * Get value by Absolute X Mode Addressing - $aaaa,X
- * </P>
- *
- * @return The value by the specified addressing mode in relation to the
- *         current PC.
- *
- */
-int byAbsoluteX() {
-	int i = byAbsolute();
-
-	int j = i + X;
-	checkPageBoundaryCrossing(i, j);
-	return j;
-}
-
-/**
- *
- * <P>
- * Get value by Zero Page Mode Addressing - $aa
- * </P>
- *
- * @return The value by the specified addressing mode in relation to the
- *         current PC.
- *
- */
-int byZeroPage() {
-	int address = readByte(PC++);
-
-	return address;
-}
-
-/**
- *
- * <P>
- * Get value by Zero Page X Mode Addressing - $aa,X
- * </P>
- *
- * @return The value by the specified addressing mode in relation to the
- *         current PC.
- *
- */
-int byZeroPageX() {
-	int address = readByte(PC++);
-
-	return (address + X) & 0xff;
-}
-
-/**
- *
- * <P>
- * Get value by Zero Page Y Mode Addressing - $aa,Y
- * </P>
- *
- * @return The value by the specified addressing mode in relation to the
- *         current PC.
- *
- */
-int byZeroPageY() {
-	int address = readByte(PC++);
-
-	return (address + Y) & 0xff;
-}
-
-/**
- *
- * <P>
- * Get value by Indirect X Mode Addressing - ($aa,X)
- * </P>
- *
- * @return The value by the specified addressing mode in relation to the
- *         current PC.
- *
- */
-int byIndirectX() {
-	int address = readByte(PC++);
-
-	address += X;
-	address &= 0xFF;
-	return readWord(address);
-}
-
-/**
- *
- * <P>
- * Get value by Indirect Y Mode Addressing - ($aa),Y
- * </P>
- *
- * @return The value by the specified addressing mode in relation to the
- *         current PC.
- *
- */
-int byIndirectY() {
-	int address = readByte(PC++);
-
-	address = readWord(address);
-	checkPageBoundaryCrossing(address, address + Y);
-	return address + Y;
-}
-
-// //////////////////////////////////////////////////////////////////////////////
-//
 // Utility Functions
 //
 // //////////////////////////////////////////////////////////////////////////////
@@ -1173,21 +1100,6 @@ int byIndirectY() {
 void checkPageBoundaryCrossing(int address1, int address2) {
 	if (((address2 ^ address1) & 0x100) != 0)
 		cyclesPending--;
-}
-
-/**
- *
- * <P>
- * Set the Zero and Negative Status Flags.
- * </P>
- *
- * @param value
- *            The value used to determine the Status Flags.
- *
- */
-void setStatusFlags(int value) {
-	P &= 0x7D;
-	P |= znTable[value];
 }
 
 /**

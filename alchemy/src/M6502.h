@@ -48,6 +48,26 @@ void checkPageBoundaryCrossing(int address1, int address2);
 
 void setStatusFlags(int value);
 
+int ASL(int i);
+
+int LSR(int i);
+
+int ROL(int i);
+
+int ROR(int i);
+
+int increment(int i);
+
+int decrement(int i);
+
+void operateAdd(int i);
+
+void operateSub(int i);
+
+void operateCmp(int i, int j);
+
+void operateBit(int i);
+
 void branch(int flagNum, boolean flagVal);
 
 void push(int stackVal);
@@ -61,13 +81,5 @@ int popWord();
 void instructionFetchExecute();
 
 void eatCycles(int cycles);
-
-typedef struct
-{
-	byte A, X, Y, P, S;
-	word PC;
-} M6502;
-
-M6502 cpu;
 
 #endif /* M6502_H_ */

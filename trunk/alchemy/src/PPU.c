@@ -253,15 +253,8 @@ void backgroundBlitzer() {
 	// Calculate the X Offset into the Line
 	int p = -loopyX;
 	int solid = -loopyX;
-	// Draw 33 Tiles on the Current Line
-	int MMC5_pal = 0;
 	int i;
 	for (i = 0; i < 33; i++) {
-		// MMC5 Palette Support
-		MMC5_pal = PPU_Latch_RenderScreen(1, nameAddr & 0x03FF);
-		if (MMC5_pal != 0) {
-			attribBits = MMC5_pal & 0x0C;
-		}
 		// Grab Pattern Table Addresses
 		patternAddr = bgPatternTableAddress + (ppuRead(nameAddr) << 4)
 				+ ((loopyV & 0x7000) >> 12);
@@ -356,8 +349,6 @@ void spriteBlitzer(int lineNum) {
 	int sprHeight = ((REG_2000 & 0x20) != 0) ? 16 : 8;
 	// Assume Less than 8 Sprites on Line Until Told Otherwise
 	REG_2002 &= 0xDF;
-	// Loop through each of the 64 Possible Sprites
-	PPU_Latch_RenderScreen(0, 0);
 	int s;
 	for (s = 0; s < 64; s++) {
 		// Determine the Lines the Sprite Crosses

@@ -21,18 +21,9 @@ extern int ppuVROMSize;
  *            Value to write to the address.
  *
  */
-void accessMapper(int address, int value) {
-}
+void accessMapper(int address, int value)
+{
 
-/**
- *
- * <P>
- * Latch Used for MMC5
- * </P>
- *
- */
-int PPU_Latch_RenderScreen(int mode, int addr) {
-	return 0;
 }
 
 /**

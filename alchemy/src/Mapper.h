@@ -10,8 +10,6 @@
 
 void accessMapper(int address, int value);
 
-int PPU_Latch_RenderScreen(int mode, int addr);
-
 void accessMapperLow(int address, int value);
 
 int accessMapperLowRead(int addr);

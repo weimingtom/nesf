@@ -520,7 +520,7 @@ boolean nmiEnabled() {
 void drawScanLine() {
 	int i;
 	// Clear the Line Buffer
-	memset(linePalettes, 64, sizeof(byte)*linePalettesSize);;
+//	memset(linePalettes, 64, sizeof(byte)*linePalettesSize);;
 	boolean skipIt = false;
 	if ((REG_2001 & 0x18) != 0x00) {
 		loopyScanlineStart();
@@ -657,7 +657,7 @@ boolean renderLine() {
 	// Set the current Scanline
 	skipIt = setScanLineNum(currentScanline);
 	// Clear Solid BG Buffer
-	memset(solidBGPixel, 0, sizeof(int) * solidBGPixelSize);
+//	memset(solidBGPixel, 0, sizeof(int) * solidBGPixelSize);
 	// Buffer the Background
 	if ((REG_2001 & 0x08) != 0x00) {
 		backgroundBlitzer();
@@ -835,10 +835,8 @@ int readPatternTable(int addr) {
 	// Ensure Range of Address
 	addr &= 0x1FFF;
 	// Check for VROM Banks
-	if (ppuVROMSize != 0) {
-		return ppuVROM[ppuBank[addr >> 10] + (addr & 0x3FF)];
-	}
-	return ppuMemory[ppuBank[addr >> 10] + (addr & 0x3FF)];
+	return ppuVROMSize != 0 ? ppuVROM[ppuBank[addr >> 10] + (addr & 0x3FF)]
+							 :ppuMemory[ppuBank[addr >> 10] + (addr & 0x3FF)];
 }
 
 /**

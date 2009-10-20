@@ -6,10 +6,12 @@
  */
 
 #include "NES.h"
-#include "AS3.h"
 #include "JoyPad.h"
 
+#define DEBUG_NES
+
 #ifndef DEBUG_NES
+#include "AS3.h"
 
 char* as3_cart;
 

@@ -656,8 +656,6 @@ int readFromPPU(int address) {
 boolean renderLine() {
 	// Set the current Scanline
 	skipIt = setScanLineNum(currentScanline);
-	// Clear Solid BG Buffer
-//	memset(solidBGPixel, 0, sizeof(int) * solidBGPixelSize);
 	// Buffer the Background
 	if ((REG_2001 & 0x08) != 0x00) {
 		backgroundBlitzer();

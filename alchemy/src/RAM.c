@@ -11,10 +11,6 @@
 byte RAM[0x0800];
 byte* programROM;
 static int programROMLenght;
-int* saveRAM; //[0x10000]
-int* mapper_extram; //[0x10000];
-int mapper_extramsize = 0;
-boolean enableSaveRAM = 1;
 int bank[16]; // Each bank is 0x1000
 int BANK_LENGTH = 16;
 
@@ -38,7 +34,6 @@ void initRAM(byte* progROM, int size) {
 	memset (RAM, 0, sizeof(int)*0x0800);
 	// Load the Trainer ROM if it Exists
 	frameIRQEnabled = 0xFF;
-//	nes.frameIRQDisenabled = 0;
 }
 
 /**
@@ -102,7 +97,7 @@ int readByte(int addr) {
 		}
 	case 3:
 		// 0x6000 - 0x7FFF SaveRAM
-		return saveRAM[addr - 0x6000];
+		return 0;
 
 	default:
 		// Get Offset
@@ -210,8 +205,6 @@ void writeByte(int addr, int value) {
 	case 3:
 		// Save RAM
 		accessMapper(addr, value);
-		if (enableSaveRAM)
-			saveRAM[addr - 0x6000] = value;
 		return;
 	default:
 		accessMapper(addr, value);

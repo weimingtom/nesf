@@ -8,16 +8,16 @@
 #include "NES.h"
 #include "JoyPad.h"
 
-#define DEBUG_NES
+//#define DEBUG_NES
 
 #ifndef DEBUG_NES
-#include "AS3.h"
+#include <AS3.h>
 
 char* as3_cart;
 
 AS3_Val connectFCScreen(void* self, AS3_Val args)
 {
-	int* screen = connectScreen();
+	int* screen = connectScreen() ;
 	return AS3_Ptr( screen );
 }
 

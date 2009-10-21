@@ -15,8 +15,10 @@
 #include "RAM.h"
 #include "screen.h"
 
+#define CYCLES_PER_LINE 116.0f
+
+int videoBuffer[256* 240 ];
 int frameIRQEnabled;
-extern float CYCLES_PER_LINE;
 
 void emulateFrame() {
 	int i;
@@ -115,7 +117,7 @@ void cpuLoadRom(char* data) {
 
 int* connectScreen()
 {
-	return createScreen();
+	return videoBuffer;
 }
 
 #ifdef DEBUG_NES

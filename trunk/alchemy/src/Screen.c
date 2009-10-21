@@ -1,12 +1,3 @@
-/**
- *
- * Class for the TV Controller used by the NESCafe NES Emulator.
- *
- * @author David de Niese
- * @version 0.56f
- * @ TRUE
- *
- */
 #include "NES.h"
 /**
  *
@@ -58,7 +49,7 @@ static int palette[] = { 0xFF808080, 0xFF0658B6, 0xFF4534CA, 0xFF8616BB,
  * </P>
  *
  */
-int videoBuffer[256* 240 ];
+extern int videoBuffer[256* 240 ];
 /**
  *
  * <P>
@@ -134,8 +125,4 @@ void setPixels(byte* palEntries, int lineNum) {
 		int colorIndex = palEntries[x];
 		videoBuffer[(scanLine << 8) | x] = palette[colorIndex];
 	}
-}
-
-int* createScreen() {
-	return videoBuffer;
 }

@@ -13,7 +13,6 @@ int P;
 int S;
 int PC;
 float cyclesPending;
-float CYCLES_PER_LINE = 116.0f;
 
 boolean halted;
 

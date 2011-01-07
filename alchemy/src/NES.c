@@ -9,6 +9,7 @@
 #include <stdlib.h>
 
 #include "NES.h"
+#include "APU.h"
 #include "PPU.h"
 #include "Mapper.h"
 #include "M6502.h"
@@ -17,7 +18,7 @@
 
 #define CYCLES_PER_LINE 116.0f
 
-int videoBuffer[256* 240 ];
+int videoBuffer[256* 240 *4];
 int frameIRQEnabled;
 
 void emulateFrame() {
@@ -102,16 +103,13 @@ void cpuLoadRom(char* data) {
 	data += charROMSize;
 
 	//mapper
-//	if (memcmp(head.reserve, reserve, 8) == 0)
-//		cart.MMC_type |= (head.ROM_type2 & 0xF0);
-	// Check the Signature is Correct (NES)
-	// Read the Number of 16k Banks of Program ROM
-	// Load the Memory with the Cartridge Image
 	initRAM(progROM, programROMSize);
 	initPPU(charROM, charROMSize, vMirroring, fourScreenNT);
 	resetMapper();
-//	setCRC(cart.crc32);
 	initResetCPU();
+
+	initAPU(44100, 50);
+	resetAPU();
 }
 
 
@@ -119,26 +117,3 @@ int* connectScreen()
 {
 	return videoBuffer;
 }
-
-#ifdef DEBUG_NES
-void loadCart() {
-	// Create Input Stream
-	//	NESCart cart;
-	FILE* fp = fopen("f:\\vNEs.nes", "rb");
-	fseek(fp, 0L, SEEK_END);
-	int len = ftell(fp);
-	rewind(fp);
-	char* data = malloc(len);
-	fread(data, sizeof(char), len, fp);
-	cpuLoadRom(data);
-	free(data);
-}
-
-int main() {
-	loadCart();
-	while (1) {
-		emulateFrame();
-	}
-	return 0;
-}
-#endif

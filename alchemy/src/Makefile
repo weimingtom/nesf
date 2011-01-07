@@ -1,6 +1,6 @@
 CC= gcc
 FLAG= -Wall -O3 -swc
-LIB= Screen.o RAM.o PPU.o Mapper.o M6502.o JoyPad.o NESCafe.o Wrapper.o
+LIB= Screen.o RAM.o PPU.o Mapper.o M6502.o JoyPad.o NES.o Wrapper.o APU.o
 
 all:	nes.swc
 

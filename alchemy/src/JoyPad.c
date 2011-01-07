@@ -6,16 +6,11 @@
  *  Created on: 2009-5-2
  *      Author: Administrator
  */
-char joypad;
-/**
- *
- * Declare variable for current button being read
- *
- */
-int joypadBit = 0;
+char joypad[2] = {0,0};
+char joypadBit[2] = {0,0};
 
 char* getJoyPadPoint() {
-	return &joypad;
+    return joypad;
 }
 /**
  *
@@ -26,27 +21,34 @@ char* getJoyPadPoint() {
  * @return Returns 1 if current indexed button is pressed, else 0.
  *
  */
-int readJoyPadBit() {
-	// Read the Indexed Bit
-
-	int correction = joypad;
-	if ((correction & 0x30) == 0x30) // Up and Down are pressed
-		correction &= 0xCF;
-	if ((correction & 0xC0) == 0xC0) // Left and Right are pressed
-		correction &= 0x3F;
-	int retVal = correction >> joypadBit;
-	// Roll Index
-	joypadBit = (joypadBit + 1) & 0x7;
-	return retVal & 0x1;
+int readJoyPadBit(int option){
+    // Read the Indexed Bit
+    int correction = joypad[option];
+    if ((correction & 0x30) == 0x30) // Up and Down are pressed
+        correction &= 0xCF;
+    if ((correction & 0xC0) == 0xC0) // Left and Right are pressed
+        correction &= 0x3F;
+    int retVal = correction >> joypadBit[option];
+    // Roll Index
+    joypadBit[option] = (joypadBit[option] + 1) & 0x7;
+    return retVal & 0x1;
 }
 
-/**
- *
- * <P>
- * Reset the JoyPad so that the next read is for button A.
- * </P>
- *
- */
-void resetJoyPad() {
-	joypadBit = 0;
+void resetJoyPad(int option) {
+    joypadBit[option] = 0;
+}
+
+void saveJoyPadState(FILE* file)
+{
+	fputc((int)joypad[0], file);
+	fputc((int)joypad[1], file);
+	fputc((int)joypadBit[0], file);
+	fputc((int)joypadBit[1], file);
+}
+void loadJoyPadState(FILE* file)
+{
+	joypad[0] = fgetc(file);
+	joypad[1] = fgetc(file);
+	joypadBit[0] = fgetc(file);
+	joypadBit[1] = fgetc(file);
 }
